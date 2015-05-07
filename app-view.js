@@ -27,9 +27,13 @@ QuiltApp.AppView = Backbone.View.extend({
 		this.$countFeatured = $('#count-featured');
 		this.$countRemaining = $('#count-remaining');
 
+		this.limit = 6;
+
+
 		this.listenTo(QuiltApp.Quilts, 'all', this.render);
 		this.listenTo(QuiltApp.Quilts, 'add', this.addOne);
-		this.listenTo(QuiltApp.Quilts, 'remove', this.removeOne);
+		this.listenTo(QuiltApp.Quilts, 'remove', this.ToggleForm);
+
 
 		// pull up data from localStorage to our from
 		QuiltApp.Quilts.fetch();
@@ -39,7 +43,7 @@ QuiltApp.AppView = Backbone.View.extend({
 	render: function(){
 		//retrieve values
 		var featuredCount = QuiltApp.Quilts.feature().length;
-		var remainCount = 6 - QuiltApp.Quilts.length;
+		var remainCount = this.limit - QuiltApp.Quilts.length;
 
 		//display values
 		this.$countFeatured.text(featuredCount);
@@ -47,25 +51,34 @@ QuiltApp.AppView = Backbone.View.extend({
 	},
 
 	addOne: function(Quilts) {
+
+		this.$tileList.empty();
+
+		var view;
+
+		QuiltApp.Quilts.each(function(Quilts){
 		// create a new view for the todo
-		var view = new QuiltApp.QuiltView({ model: Quilts });
+		view = new QuiltApp.QuiltView({ model: Quilts });
+
 
 		// put the new view on the page
 		this.$tileList.append(view.render().el);
 
+		},this)
+
 		// check if tiles amount touch the limit, if so sildeUp the from to prevent user keep puting new tile
-		var remainCount = 6 - QuiltApp.Quilts.length;
-		if (remainCount == 0){
-			this.$tileForm.slideUp();
-		}
+		this.ToggleForm();
 	},
 
-	removeOne: function(){
-		// if tiles amount under limit, show the input box
-		var remainCount = 6 - QuiltApp.Quilts.length;
-		if (remainCount !== 0){
+	ToggleForm: function(){
+		var remainCount = this.limit - QuiltApp.Quilts.length;
+
+		if (remainCount == 0){
+			this.$tileForm.slideUp();
+		} else{
 			this.$tileForm.slideDown();
 		}
+
 	},
 
 	createTile: function(e){
@@ -85,6 +98,7 @@ QuiltApp.AppView = Backbone.View.extend({
         this.$tileForm[0].reset();
 
 	}
+
 });
 
 // initialize our application
