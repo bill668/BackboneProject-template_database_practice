@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Backbone Image Quilt</title>
+  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/pure/0.4.2/pure-min.css">
+
+  <style type="text/css">
+    *, *:before, *:after {
+      -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+    }
+
+    html, body {
+      background: #f1909a;
+    }
+
+    .site-header {
+      text-align: center;
+    }
+
+    #quilt-app {
+      margin: 20px auto;
+      width: 830px;
+      padding: 40px;
+      background: #fff;
+      box-shadow: 0 0 4px 2px rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+    }
+
+    #tile-form {
+      padding: 10px;
+      background: #eee;
+    }
+
+    #quilt-stats {
+      padding: 10px;
+      background: #eee;
+      list-style-type: none;
+      margin: 20px 0;
+    }
+
+    #quilt-stats li {
+      display: inline-block;
+      margin-right: 10px;
+      padding: 0;
+    }
+
+    #tile-list {
+      list-style-type: none;
+      width: 750px;
+      height: 500px;
+      background: #f1f1f1;
+      margin: 0 auto;
+      padding: 0;
+      box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.2);
+    }
+
+    .tile {
+      position: relative;
+      float: left;
+      width: 250px;
+      height: 250px;
+      background: #fff;
+      transition: all 0.3s ease;
+    }
+
+    .tile.featured .tile-wrapper {
+      box-shadow: inset 0 0 0 5px #3cd4a8;
+    }
+
+    .tile.expanded {
+      position: absolute;
+      z-index: 10;
+      width: 750px;
+      height: 500px;
+    }
+
+    .tile-wrapper {
+      width: 100%;
+      height: 100%;
+      background-position: center center;
+      background-repeat: no-repeat;
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.85);
+      transition: all 0.3s ease;
+    }
+
+    .expanded .tile-wrapper {
+      background-size: cover;
+    }
+
+    .tile-caption {
+      opacity: 0;
+      background: rgba(255, 255, 255, 0.85);
+      color: #333;
+      padding: 10px;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.2s ease;
+    }
+
+    .tile:hover .tile-caption {
+      opacity: 1;
+    }
+
+    .tile-caption p {
+      margin: 0 0 10px;
+      padding: 5px 5px 40px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: bold;
+    }
+
+    .expanded .tile-caption p {
+      font-size: 30px;
+      padding: 40px;
+    }
+
+    .tile-actions {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      width: 230px;
+      background: rgba(255, 255, 255, 0.6);
+      height: 30px;
+      padding: 4px 5px 3px;
+      overflow: hidden;
+      font-size: 20px;
+    }
+
+    .expanded .tile-actions {
+      width: 730px;
+    }
+
+    .tile-action {
+      display: block;
+      float: left;
+      width: 33%;
+      text-align: center;
+      color: #4a94f1;
+      transition: all 0.2s ease;
+    }
+
+    .tile-action:hover {
+      color: #3872bb;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Image Quilt</h1>
+</header>
+<main role="main" id="quilt-app">
+  <form action="" id="tile-form" class="pure-form">
+    <input type="url" id="source" name="source" placeholder="Image URL">
+    <input type="text" id="caption" name="caption" placeholder="Image caption" class="pure-input-1-2">
+
+    <br><br>
+
+    <label for="featured">Featured?</label>
+    <input type="checkbox" id="featured" name="featured">
+
+    <label for="order">Order</label>
+    <input type="number" id="order" name="order" min="0" max="20" step="1" value="0">
+
+    <button class="pure-button pure-button-primary" type="submit" id="create-tile">Add Tile</button>
+  </form>
+
+  <ul id="quilt-stats">
+    <li>
+      Featured: <span id="count-featured"></span>
+    </li>
+    <li>
+      Remaining: <span id="count-remaining"></span>
+    </li>
+  </ul>
+
+  <ul id="tile-list"></ul>
+</main>
+
+<script type="text/template" id="tile-template">
+  <div class="tile-wrapper" style="background-image: url('<%= source %>');">
+    <div class="tile-caption">
+      <p>
+        <%= caption %>
+      </p>
+      <div class="tile-actions clearfix">
+        <a href="#" class="tile-action feature" alt="feature tile"><i class="fa fa-star"></i></a>
+        <a href="#" class="tile-action view" alt="view tile"><i class="fa fa-expand"></i></a>
+        <a href="#" class="tile-action delete" alt="delete tile"><i class="fa fa-trash-o"></i></a>
+      </div>
+    </div>
+  </div>
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/backbone-localstorage.js/1.1.16/backbone.localStorage-min.js"></script>
+
+<script src="quilt-model.js"></script>
+<script src="quilt-view.js"></script>
+<script src="quilt-collection.js"></script>
+<script src="app-view-v2.js"></script>
+
+</body>
+</html>
